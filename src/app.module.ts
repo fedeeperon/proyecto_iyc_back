@@ -18,7 +18,7 @@
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
         entities: [ImcEntity],
-        synchronize: true,
+        synchronize: false,
         ssl: {
           rejectUnauthorized: false, // esto permite conexión SSL sin certificado verificado
         },
