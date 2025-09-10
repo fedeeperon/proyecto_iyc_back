@@ -19,8 +19,9 @@ dotenv.config(); // carga variables del .env
       database: process.env.DB_NAME,
       entities: [ImcEntity],
       synchronize: false,
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-
+      ssl: {
+        rejectUnauthorized: false, // esto permite conexión SSL sin certificado verificado
+      },
     }),
     ImcModule,
   ],
