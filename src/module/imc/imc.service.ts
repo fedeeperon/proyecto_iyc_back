@@ -26,7 +26,7 @@ export class ImcService {
       if (imc < 18.5) categoria = Categoria.BAJO;
       else if (imc < 25) categoria = Categoria.NORMAL;
       else if (imc < 30) categoria = Categoria.SOBRE_PESO;
-      else categoria = Categoria.OBESIDAD;
+      else categoria = Categoria.OBESO;
 
       const createData: CreateImcDto = {
         peso,
