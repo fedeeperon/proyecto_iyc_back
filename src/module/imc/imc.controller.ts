@@ -1,7 +1,6 @@
-import { Controller, Post, Body, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, Get } from '@nestjs/common';
 import { ImcService } from './imc.service';
 import { CalcularImcDto } from './dto/calcular-imc-dto';
-
 
 @Controller('imc')
 export class ImcController {
@@ -10,5 +9,10 @@ export class ImcController {
   @Post('calcular')
   calcular(@Body(ValidationPipe) data: CalcularImcDto) {
     return this.imcService.calcularImc(data);
+  }
+
+  @Get('historial')
+  historial() {
+    return this.imcService.historial();
   }
 }
