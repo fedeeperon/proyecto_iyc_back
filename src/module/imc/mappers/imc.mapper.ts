@@ -8,12 +8,12 @@ export class ImcMapper {
         dto.peso = Number(entity.peso);
         dto.altura = Number(entity.altura);
         dto.imc = Number(entity.imc);
-        dto.categoria = entity.categoria;
+        dto.categoria = entity.categoria; // ahora es del tipo Categoria correcto
         dto.fecha = entity.fecha;
         return dto;
     }
 
     static toDtoList(entities: ImcEntity[]): ImcDto[] {
-        return entities.map((entity) => this.toDto(entity));
+        return entities.map(entity => this.toDto(entity));
     }
 }
