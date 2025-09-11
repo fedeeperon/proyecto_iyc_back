@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateImcDto {
@@ -20,9 +20,9 @@ export class CreateImcDto {
   @Max(99.999)
   imc: number;
 
-  @IsEnum(Categoria)
   @IsNotEmpty()
   categoria: string;
 
   fecha?: Date;
 }
+
