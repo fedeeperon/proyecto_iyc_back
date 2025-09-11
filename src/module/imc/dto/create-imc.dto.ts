@@ -1,6 +1,5 @@
 import { IsEnum, IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Categoria } from '../enum/categoria-column.enum';
 
 export class CreateImcDto {
   @Type(() => Number)
@@ -23,7 +22,7 @@ export class CreateImcDto {
 
   @IsEnum(Categoria)
   @IsNotEmpty()
-  categoria: Categoria;
+  categoria: string;
 
   fecha?: Date;
 }
