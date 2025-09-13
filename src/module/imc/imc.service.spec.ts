@@ -210,16 +210,37 @@ describe('ImcService', () => {
     });
 
     //PU-17
-    it('should filter historial by categoria (PU-17)', async () => {
+    it('should filter historial by all categories (PU-17)', async () => {
         const mockHistorial = [
-            { id: 1, altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date() },
-            { id: 2, altura: 1.7, peso: 90, imc: 31.14, categoria: 'Obeso', fecha: new Date() },
+            { id: 1, altura: 1.7, peso: 50, imc: 17.3, categoria: 'Bajo Peso', fecha: new Date() },
+            { id: 2, altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date() },
             { id: 3, altura: 1.7, peso: 80, imc: 27.68, categoria: 'Sobrepeso', fecha: new Date() },
+            { id: 4, altura: 1.7, peso: 100, imc: 34.6, categoria: 'Obeso', fecha: new Date() },
         ];
         mockImcRepository.find.mockResolvedValue(mockHistorial);
         const historial = await service.getHistorial(true, 0, 10);
+
+        // Todas
+        expect(historial.length).toBe(4);
+
+        // Bajo Peso
+        const bajoPeso = historial.filter(item => item.categoria === 'Bajo Peso');
+        expect(bajoPeso.length).toBe(1);
+        expect(bajoPeso[0].categoria).toBe('Bajo Peso');
+
+        // Normal
+        const normal = historial.filter(item => item.categoria === 'Normal');
+        expect(normal.length).toBe(1);
+        expect(normal[0].categoria).toBe('Normal');
+
+        // Sobrepeso
+        const sobrepeso = historial.filter(item => item.categoria === 'Sobrepeso');
+        expect(sobrepeso.length).toBe(1);
+        expect(sobrepeso[0].categoria).toBe('Sobrepeso');
+
+        // Obeso
         const obeso = historial.filter(item => item.categoria === 'Obeso');
-        expect(obeso.length).toBeGreaterThan(0);
+        expect(obeso.length).toBe(1);
         expect(obeso[0].categoria).toBe('Obeso');
     });
 });
