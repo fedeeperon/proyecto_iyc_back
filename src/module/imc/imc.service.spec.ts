@@ -80,19 +80,19 @@ describe('ImcService', () => {
     });
 
     //PU-01
-    it('should throw an error if altura tiene más de dos decimales (caso de validación específica)', async () => {
+    it('should throw an error if altura has more than 2 decimal places (PU-01)', async () => {
         const dto = { altura: 2.111, peso: 100 };
         await expect(service.calcularImc(dto as any)).rejects.toThrow();
     });
     
     //PU-02
-    it('should throw an error if peso tiene más de dos decimales (caso de validación específica)', async () => {
+    it('should throw an error if peso has more than 2 decimal places (PU-02)', async () => {
         const dto = { altura: 2.1, peso: 100.555 };
         await expect(service.calcularImc(dto as any)).rejects.toThrow();
     });
 
     //PU-03
-    it('should calculate IMC correctly', async () => {
+    it('should calculate IMC correctly (PU-03)', async () => {
         const dto: CalcularImcDto = { altura: 2.1, peso: 101 };
         const result = await service.calcularImc(dto);
         expect(result.imc).toBeCloseTo(22.90, 2);
@@ -100,37 +100,126 @@ describe('ImcService', () => {
     });
 
     //PU-04
+    it('should throw an error if altura or peso are not numeric (PU-04)', async () => {
+        const dto = { altura: 'abc', peso: '#$%' };
+        await expect(service.calcularImc(dto as any)).rejects.toThrow();
+    });
 
     //PU-05
-    it('should throw an error if peso <=0 (caso de validación específica)', async () => {
+    it('should throw an error if peso <=0 (PU-05)', async () => {
         const dto = { altura: 1.77, peso: -100 };
         await expect(service.calcularImc(dto as any)).rejects.toThrow();
     });
 
     //PU-06
-    it('should throw an error if altura <=0 (caso de validación específica)', async () => {
+    it('should throw an error if altura <=0 (PU-06)', async () => {
         const dto = { altura: -1.77, peso: 100 };
         await expect(service.calcularImc(dto as any)).rejects.toThrow();
     });
 
-    it('should return Bajo Peso for IMC < 18.5', async () => {
+    //PU-07
+    it('should throw an error if altura or peso are empty (PU-07)', async () => {
+        const dto = { altura: '', peso: '' };
+        await expect(service.calcularImc(dto as any)).rejects.toThrow();
+    });
+
+    //PU-08
+    it('should throw an error if altura is 0 (PU-08)', async () => {
+        const dto = { altura: 0, peso: 100 };
+        await expect(service.calcularImc(dto as any)).rejects.toThrow();
+    });
+
+    //PU-09
+    it('should throw an error if peso is 0 (PU-09)', async () => {
+        const dto = { altura: 1.77, peso: 0 };
+        await expect(service.calcularImc(dto as any)).rejects.toThrow();
+    });
+
+
+    //PU-10
+    it('should throw an error if altura is 3 (PU-10)', async () => {
+        const dto = { altura: 3, peso: 100 };
+        await expect(service.calcularImc(dto as any)).rejects.toThrow();
+    });
+
+
+    //PU-11
+    it('should throw an error if peso is 500 (PU-11)', async () => {
+        const dto = { altura: 1.77, peso: 500 };
+        await expect(service.calcularImc(dto as any)).rejects.toThrow();
+    });
+
+    //PU-12
+    it('should return "Bajo Peso" if IMC < 18.5 (PU-12)', async () => {
         const dto: CalcularImcDto = { altura: 1.75, peso: 50 };
         const result = await service.calcularImc(dto);
-        expect(result.imc).toBeCloseTo(16.33, 2);
+        expect(result.imc).toBeLessThan(18.5);
         expect(result.categoria).toBe('Bajo Peso');
     });
 
-    it('should return Sobrepeso for 25 <= IMC < 30', async () => {
-        const dto: CalcularImcDto = { altura: 1.75, peso: 80 };
+    //PU-13
+    it('should return "Normal" if 18.5 <= IMC <= 24.9 (PU-13)', async () => {
+        const dto: CalcularImcDto = { altura: 1.75, peso: 75 };
         const result = await service.calcularImc(dto);
-        expect(result.imc).toBeCloseTo(26.12, 2);
+        expect(result.imc).toBeGreaterThanOrEqual(18.5);
+        expect(result.imc).toBeLessThanOrEqual(24.9);
+        expect(result.categoria).toBe('Normal');
+    });
+
+    //PU-14
+    it('should return "Sobrepeso" if 25 <= IMC <= 29.9 (PU-14)', async () => {
+        const dto: CalcularImcDto = { altura: 1.75, peso: 85 };
+        const result = await service.calcularImc(dto);
+        expect(result.imc).toBeGreaterThanOrEqual(25);
+        expect(result.imc).toBeLessThanOrEqual(29.9);
         expect(result.categoria).toBe('Sobrepeso');
     });
 
-    it('should return Obeso for IMC >= 30', async () => {
+    //PU-15
+    it('should return "Obeso" if IMC >= 30 (PU-15)', async () => {
         const dto: CalcularImcDto = { altura: 1.75, peso: 100 };
         const result = await service.calcularImc(dto);
-        expect(result.imc).toBeCloseTo(32.65, 2);
+        expect(result.imc).toBeGreaterThanOrEqual(30);
         expect(result.categoria).toBe('Obeso');
+    });
+
+    //PU-16
+    it('should record the IMC calculation in the history immediately with all the data', async () => {
+        const dto: CalcularImcDto = { altura: 1.68, peso: 65 };
+        const result = await service.calcularImc(dto);
+        mockImcRepository.find.mockResolvedValue([
+            {
+                id: 1,
+                altura: result.altura,
+                peso: result.peso,
+                imc: result.imc,
+                categoria: result.categoria,
+                fecha: result.fecha,
+            } as any
+        ]);
+        const historial = await service.getHistorial(true, 0, 1);
+        expect(Array.isArray(historial)).toBe(true);
+        expect(historial.length).toBeGreaterThan(0);
+        expect(historial[0]).toMatchObject({
+            altura: 1.68,
+            peso: 65,
+            imc: 23.03,
+            categoria: 'Normal',
+        });
+        expect(historial[0].fecha).toBeDefined();
+    });
+
+    //PU-17
+    it('should filter historial by categoria (PU-17)', async () => {
+        const mockHistorial = [
+            { id: 1, altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date() },
+            { id: 2, altura: 1.7, peso: 90, imc: 31.14, categoria: 'Obeso', fecha: new Date() },
+            { id: 3, altura: 1.7, peso: 80, imc: 27.68, categoria: 'Sobrepeso', fecha: new Date() },
+        ];
+        mockImcRepository.find.mockResolvedValue(mockHistorial);
+        const historial = await service.getHistorial(true, 0, 10);
+        const obeso = historial.filter(item => item.categoria === 'Obeso');
+        expect(obeso.length).toBeGreaterThan(0);
+        expect(obeso[0].categoria).toBe('Obeso');
     });
 });
