@@ -18,6 +18,22 @@ export class ImcService {
     try {
       const { peso, altura } = data;
 
+      if (altura <= 0 || altura >= 3) {
+        throw new Error('La altura debe ser mayor a 0 y menor a 3 metros');
+      }
+
+      if (!/^\d+(\.\d{1,2})?$/.test(altura.toString())) {
+        throw new Error('La altura debe tener como máximo dos decimales');
+      }
+      
+      if (peso <= 0 || peso >= 500) {
+        throw new Error('El peso debe ser mayor a 0 y menor a 500 kg');
+      }
+
+      if (!/^\d+(\.\d{1,2})?$/.test(peso.toString())) {
+        throw new Error('El peso debe tener como máximo dos decimales');
+      }
+      
       const imc = peso / (altura * altura);
       const imcRedondeado = Math.round(imc * 100) / 100;
 
