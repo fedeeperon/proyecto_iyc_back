@@ -1,44 +1,73 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ImcEntity } from './entities/imc.entity';
+import { Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { CalcularImcDto } from './dto/calcular-imc.dto';
+import { IImcRepository } from './repository/imc-repository.interface';
+import { CreateImcDto } from './dto/create-imc.dto';
 import { ImcMapper } from './mappers/imc.mapper';
 
 @Injectable()
 export class ImcService {
   private readonly logger = new Logger('ImcService');
 
-  constructor(@InjectRepository(ImcEntity) private readonly imcRepository: Repository<ImcEntity>) {}
+  constructor(
+    @Inject('IImcRepository')
+    private readonly imcRepository: IImcRepository,
+  ) {}
 
-  async calcularImc(data: { peso: number; altura: number }) {
-    const imc = data.peso / (data.altura * data.altura);
-    let categoria = '';
+  async calcularImc(data: CalcularImcDto) {
+    this.logger.debug(`Calculando IMC con datos: ${JSON.stringify(data)}`);
+    try {
+      const { peso, altura } = data;
 
-    if (imc < 18.5) categoria = 'Bajo peso';
-    else if (imc < 25) categoria = 'Normal';
-    else if (imc < 30) categoria = 'Sobrepeso';
-    else categoria = 'Obeso';
+      if (altura <= 0 || altura >= 3) {
+        throw new Error('La altura debe ser mayor a 0 y menor a 3 metros');
+      }
 
-    const registro = this.imcRepository.create({
-      peso: data.peso,
-      altura: data.altura,
-      imc,
-      categoria,
-      fecha: new Date(),
-    });
+      if (!/^\d+(\.\d{1,2})?$/.test(altura.toString())) {
+        throw new Error('La altura debe tener como máximo dos decimales');
+      }
+      
+      if (peso <= 0 || peso >= 500) {
+        throw new Error('El peso debe ser mayor a 0 y menor a 500 kg');
+      }
 
-    return await this.imcRepository.save(registro);
+      if (!/^\d+(\.\d{1,2})?$/.test(peso.toString())) {
+        throw new Error('El peso debe tener como máximo dos decimales');
+      }
+      
+      const imc = peso / (altura * altura);
+      const imcRedondeado = Math.round(imc * 100) / 100;
+
+      // Categoria como string
+      let categoria: string;
+      if (imc < 18.5) categoria = 'Bajo peso';
+      else if (imc < 25) categoria = 'Normal';
+      else if (imc < 30) categoria = 'Sobrepeso';
+      else categoria = 'Obeso';
+
+      const createData: CreateImcDto = {
+        peso,
+        altura,
+        imc: imcRedondeado,
+        categoria,
+        fecha: new Date(),
+      };
+
+      this.logger.log(`Guardando IMC calculado: ${JSON.stringify(createData)}`);
+
+      const resultado = await this.imcRepository.createAndSave(createData);
+
+      return ImcMapper.toCreateDto(resultado);
+    } catch (error) {
+      this.logger.error(`Error al crear el registro IMC: ${error.message}`, error.stack);
+      throw new InternalServerErrorException('No se pudo crear el registro IMC');
+    }
   }
 
   async getHistorial(esDescendente: boolean, skip: number, take?: number) {
     this.logger.debug(`Obteniendo historial de IMC: descendente=${esDescendente}, skip=${skip}, take=${take ?? 'TODOS'}`);
 
     try {
-      const encontrados = await this.imcRepository.find({
-        order: { fecha: esDescendente ? 'DESC' : 'ASC' },
-        skip,
-        ...(take ? { take } : {}), // si take no viene → devuelve todos
-      });
+      const encontrados = await this.imcRepository.find(esDescendente, skip, take ?? undefined);
 
       return ImcMapper.toCreateDtoList(encontrados);
     } catch (error) {
