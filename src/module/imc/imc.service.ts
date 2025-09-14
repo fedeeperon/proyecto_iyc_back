@@ -39,7 +39,7 @@ export class ImcService {
 
       // Categoria como string
       let categoria: string;
-      if (imc < 18.5) categoria = 'Bajo Peso';
+      if (imc < 18.5) categoria = 'Bajo peso';
       else if (imc < 25) categoria = 'Normal';
       else if (imc < 30) categoria = 'Sobrepeso';
       else categoria = 'Obeso';
@@ -63,12 +63,12 @@ export class ImcService {
     }
   }
 
-  async getHistorial(esDescendente: boolean, skip: number, take: number) {
-    this.logger.debug(
-      `Obteniendo historial de IMC con datos: descendente: ${esDescendente}, skip: ${skip}, take: ${take}`
-    );
+  async getHistorial(esDescendente: boolean, skip: number, take?: number) {
+    this.logger.debug(`Obteniendo historial de IMC: descendente=${esDescendente}, skip=${skip}, take=${take ?? 'TODOS'}`);
+
     try {
-      const encontrados = await this.imcRepository.find(esDescendente, skip, take);
+      const encontrados = await this.imcRepository.find(esDescendente, skip, take ?? undefined);
+
       return ImcMapper.toCreateDtoList(encontrados);
     } catch (error) {
       this.logger.error(`Error al obtener el historial de IMC: ${error.message}`, error.stack);
