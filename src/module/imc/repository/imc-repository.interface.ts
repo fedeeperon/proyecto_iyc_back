@@ -6,6 +6,6 @@ export interface IImcRepository {
     find(
         esDescendente: boolean,
         skip: number,
-        take: number,
+        take?: number,
     ): Promise<ImcEntity[]>;
 }
