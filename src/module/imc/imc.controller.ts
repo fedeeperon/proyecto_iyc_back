@@ -1,24 +1,30 @@
-import { Controller, Post, Body, ValidationPipe, Get, Query, Logger } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, Get, Query, UseGuards, Req } from '@nestjs/common';
 import { ImcService } from './imc.service';
 import { CalcularImcDto } from './dto/calcular-imc.dto';
 import { PaginationDto } from './dto/pagination.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { User } from '../user/entities/user.entity';
+import { Request } from 'express';
 
+interface AuthRequest extends Request {
+  user: User;
+}
+
+@UseGuards(JwtAuthGuard)
 @Controller('imc')
 export class ImcController {
-  private readonly logger = new Logger('ImcController');
-
   constructor(private readonly imcService: ImcService) {}
 
   @Post('calcular')
-  calcular(@Body(ValidationPipe) data: CalcularImcDto) {
-    this.logger.debug(`Solicitud para calcular IMC con peso=${data.peso}, altura=${data.altura}`);
-    return this.imcService.calcularImc(data);
+  calcular(@Body(ValidationPipe) data: CalcularImcDto, @Req() req: AuthRequest) {
+    return this.imcService.calcularImc(data, req.user);
   }
 
   @Get('historial')
-  getHistorial(@Query() query: PaginationDto) {
-    const { esDescendente = true, skip = 0, take } = query;
-    this.logger.debug(`Solicitud de historial: esDescendente=${esDescendente}, skip=${skip}, take=${take ?? 'TODOS'}`);
-    return this.imcService.getHistorial(esDescendente, skip, take);
+  getHistorial(@Query() query: PaginationDto, @Req() req: AuthRequest) {
+    const esDescendente = query.esDescendente ?? true;
+    const skip = Number(query.skip ?? 0);
+    const take = query.take ? Number(query.take) : undefined;
+    return this.imcService.getHistorial(req.user, skip, take, esDescendente);
   }
 }
