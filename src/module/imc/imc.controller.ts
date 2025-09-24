@@ -1,4 +1,13 @@
-import { Controller, Post, Body, ValidationPipe, Get, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  ValidationPipe,
+  Get,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ImcService } from './imc.service';
 import { CalcularImcDto } from './dto/calcular-imc.dto';
 import { PaginationDto } from './dto/pagination.dto';
@@ -16,7 +25,10 @@ export class ImcController {
   constructor(private readonly imcService: ImcService) {}
 
   @Post('calcular')
-  calcular(@Body(ValidationPipe) data: CalcularImcDto, @Req() req: AuthRequest) {
+  calcular(
+    @Body(ValidationPipe) data: CalcularImcDto,
+    @Req() req: AuthRequest,
+  ) {
     return this.imcService.calcularImc(data, req.user);
   }
 
@@ -26,5 +38,10 @@ export class ImcController {
     const skip = Number(query.skip ?? 0);
     const take = query.take ? Number(query.take) : undefined;
     return this.imcService.getHistorial(req.user, skip, take, esDescendente);
+  }
+
+  @Get('estadisticas')
+  getEstadisticas(@Req() req: AuthRequest) {
+    return this.imcService.getEstadisticas(req.user);
   }
 }
