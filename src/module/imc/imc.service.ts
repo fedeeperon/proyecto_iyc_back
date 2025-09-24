@@ -1,8 +1,11 @@
-import { Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger, Inject } from '@nestjs/common';
 import { CalcularImcDto } from './dto/calcular-imc.dto';
 import { IImcRepository } from './repository/imc-repository.interface';
-import { CreateImcDto } from './dto/create-imc.dto';
 import { ImcMapper } from './mappers/imc.mapper';
+import { User } from '../user/entities/user.entity';
+import { ImcEntity } from './entities/imc.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class ImcService {
@@ -11,64 +14,59 @@ export class ImcService {
   constructor(
     @Inject('IImcRepository')
     private readonly imcRepository: IImcRepository,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
-  async calcularImc(data: CalcularImcDto) {
-    this.logger.debug(`Calculando IMC con datos: ${JSON.stringify(data)}`);
+  async calcularImc(data: CalcularImcDto, user: User) {
+    this.logger.debug(`Calculando IMC con datos: ${JSON.stringify(data)} para usuario ${user.email}`);
     try {
       const { peso, altura } = data;
 
-      if (altura <= 0 || altura >= 3) {
-        throw new Error('La altura debe ser mayor a 0 y menor a 3 metros');
-      }
+      // Validaciones básicas
+      if (altura <= 0 || altura >= 3) throw new Error('La altura debe ser mayor a 0 y menor a 3 metros');
+      if (peso <= 0 || peso >= 500) throw new Error('El peso debe ser mayor a 0 y menor a 500 kg');
 
-      if (!/^\d+(\.\d{1,2})?$/.test(altura.toString())) {
-        throw new Error('La altura debe tener como máximo dos decimales');
-      }
-      
-      if (peso <= 0 || peso >= 500) {
-        throw new Error('El peso debe ser mayor a 0 y menor a 500 kg');
-      }
-
-      if (!/^\d+(\.\d{1,2})?$/.test(peso.toString())) {
-        throw new Error('El peso debe tener como máximo dos decimales');
-      }
-      
       const imc = peso / (altura * altura);
       const imcRedondeado = Math.round(imc * 100) / 100;
 
-      // Categoria como string
       let categoria: string;
       if (imc < 18.5) categoria = 'Bajo peso';
       else if (imc < 25) categoria = 'Normal';
       else if (imc < 30) categoria = 'Sobrepeso';
       else categoria = 'Obeso';
 
-      const createData: CreateImcDto = {
-        peso,
-        altura,
-        imc: imcRedondeado,
-        categoria,
-        fecha: new Date(),
-      };
+      // 🔹 Buscar entidad real del usuario
+      const usuarioEntity = await this.userRepository.findOne({
+        where: { id: user.id }, // user.id viene del JWT
+      });
+      console.log(usuarioEntity);
+      if (!usuarioEntity) throw new Error('Usuario no encontrado');
 
-      this.logger.log(`Guardando IMC calculado: ${JSON.stringify(createData)}`);
+      // Crear entidad IMC
+      const imcEntity = new ImcEntity();
+      imcEntity.peso = peso;
+      imcEntity.altura = altura;
+      imcEntity.imc = imcRedondeado;
+      imcEntity.categoria = categoria;
+      imcEntity.fecha = new Date();
+      imcEntity.user = user;
 
-      const resultado = await this.imcRepository.createAndSave(createData);
+      this.logger.log(`Guardando IMC calculado para usuario ${user.email}: ${JSON.stringify(imcEntity)}`);
 
+      const resultado = await this.imcRepository.createAndSave(imcEntity);
       return ImcMapper.toCreateDto(resultado);
+
     } catch (error) {
       this.logger.error(`Error al crear el registro IMC: ${error.message}`, error.stack);
       throw new InternalServerErrorException('No se pudo crear el registro IMC');
     }
   }
 
-  async getHistorial(esDescendente: boolean, skip: number, take?: number) {
-    this.logger.debug(`Obteniendo historial de IMC: descendente=${esDescendente}, skip=${skip}, take=${take ?? 'TODOS'}`);
-
+  async getHistorial(user: User, skip: number, take?: number, esDescendente = true) {
+    this.logger.debug(`Obteniendo historial de IMC para ${user.email}: descendente=${esDescendente}, skip=${skip}, take=${take ?? 'TODOS'}`);
     try {
-      const encontrados = await this.imcRepository.find(esDescendente, skip, take ?? undefined);
-
+      const encontrados = await this.imcRepository.findByUser(user, esDescendente, skip, take);
       return ImcMapper.toCreateDtoList(encontrados);
     } catch (error) {
       this.logger.error(`Error al obtener el historial de IMC: ${error.message}`, error.stack);

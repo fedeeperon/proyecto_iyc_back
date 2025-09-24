@@ -5,6 +5,9 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ImcEntity } from './module/imc/entities/imc.entity';
 import * as dotenv from 'dotenv';
+import { UserModule } from './module/user/user.module';
+import { AuthModule } from './module/auth/auth.module';
+import { User } from './module/user/entities/user.entity';
 
 dotenv.config(); // carga variables del .env
 
@@ -17,13 +20,15 @@ dotenv.config(); // carga variables del .env
       username: process.env.DB_USER ,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [ImcEntity],
+      entities: [ImcEntity, User],
       synchronize: false,
       ssl: {
         rejectUnauthorized: false, // esto permite conexión SSL sin certificado verificado
       },
     }),
     ImcModule,
+    UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
