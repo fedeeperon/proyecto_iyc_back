@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
@@ -18,10 +18,17 @@ export class AuthService {
   }
 
   async register(createUserDto: CreateUserDto) {
-    const newUser = await this.usersService.create(createUserDto);
-    return this.generateToken(newUser);
+    try {
+      const newUser = await this.usersService.create(createUserDto);
+      return this.generateToken(newUser);
+    } catch (error) {
+      // Código de error en Postgres para UNIQUE constraint
+      if (error.code === '23505') {
+        throw new BadRequestException('Email ya registrado');
+      }
+      throw new InternalServerErrorException('Error al registrar usuario');
+    }
   }
-  
 
   async login(loginUserDto: LoginUserDto) {
     const user = await this.usersService.findByEmail(loginUserDto.email);
@@ -42,3 +49,4 @@ export class AuthService {
     return this.generateToken(user);
   }
 }
+
