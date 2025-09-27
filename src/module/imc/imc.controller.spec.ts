@@ -2,7 +2,27 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ImcController } from './imc.controller';
 import { ImcService } from './imc.service';
 import { CalcularImcDto } from './dto/calcular-imc.dto';
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import {
+    BadRequestException,
+    ExecutionContext,
+    ValidationPipe,
+} from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+
+const mockUser = {
+    id: 1,
+    email: 'test@example.com',
+    password: 'hashedPassword',
+    imc: [],
+};
+
+const mockAuthGuard = {
+    canActivate: (context: ExecutionContext) => {
+        const req = context.switchToHttp().getRequest();
+        req.user = mockUser;
+        return true;
+    },
+};
 
 describe('ImcController', () => {
     let controller: ImcController;
@@ -19,7 +39,10 @@ describe('ImcController', () => {
                     },
                 },
             ],
-        }).compile();
+        })
+            .overrideGuard(JwtAuthGuard)
+            .useValue(mockAuthGuard)
+            .compile();
 
         controller = module.get<ImcController>(ImcController);
         service = module.get<ImcService>(ImcService);
@@ -36,9 +59,11 @@ describe('ImcController', () => {
             categoria: 'Normal',
         } as any);
 
-        const result = await controller.calcular(dto);
+        const result = await controller.calcular(dto, {
+            user: mockUser,
+        } as any);
         expect(result).toEqual({ imc: 22.86, categoria: 'Normal' });
-        expect(service.calcularImc).toHaveBeenCalledWith(dto);
+        expect(service.calcularImc).toHaveBeenCalledWith(dto, mockUser);
     });
 
     it('should throw BadRequestException for invalid input', async () => {
