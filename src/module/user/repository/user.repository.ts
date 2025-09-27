@@ -30,11 +30,18 @@ export class UserRepository implements IUserRepository {
 
   async createUser(dto: CreateUserDto): Promise<User> {
     const partial = UserMapper.fromCreateDto(dto);
+
+    if (!partial.password) {
+      throw new Error('La contraseña es obligatoria para crear un usuario');
+    }
+
     const hashedPassword = await bcrypt.hash(partial.password, 10);
+
     const entity = this.ormRepo.create({
       ...partial,
       password: hashedPassword,
     });
+
     return this.ormRepo.save(entity);
   }
 
@@ -45,6 +52,7 @@ export class UserRepository implements IUserRepository {
     }
 
     const partial = UserMapper.fromUpdateDto(dto);
+
     if (partial.password) {
       partial.password = await bcrypt.hash(partial.password, 10);
     }

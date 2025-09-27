@@ -1,4 +1,3 @@
-import { CreateImcDto } from '../dto/create-imc.dto';
 import { ImcEntity } from '../entities/imc.entity';
 import { User } from '../../user/entities/user.entity';
 
