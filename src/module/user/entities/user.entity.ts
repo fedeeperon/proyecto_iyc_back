@@ -1,4 +1,4 @@
-import { ImcEntity } from 'src/module/imc/entities/imc.entity';
+import { ImcEntity } from '../../imc/entities/imc.entity';
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 
 @Entity('users')

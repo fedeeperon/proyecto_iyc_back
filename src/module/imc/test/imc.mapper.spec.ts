@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { ImcMapper } from './imc.mapper';
+import { ImcMapper } from '../mappers/imc.mapper';
 import { ImcEntity } from '../entities/imc.entity';
 import { CreateImcDto } from '../dto/create-imc.dto';
 
