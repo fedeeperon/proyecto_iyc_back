@@ -25,32 +25,6 @@ const mockImcRepository: IImcRepository = {
 };
 
 describe('ImcService', () => {
-    let service: ImcService;
-
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                ImcService,
-                {
-                    provide: 'IImcRepository',
-                    useValue: mockImcRepository,
-                },
-                {
-                    provide: getRepositoryToken(User),
-                    useValue: mockUserRepository,
-                },
-            ],
-        }).compile();
-
-        service = module.get<ImcService>(ImcService);
-    });
-
-    it('should be defined', () => {
-        expect(service).toBeDefined();
-    });
-});
-
-describe('ImcService', () => {
     describe('calcularImc error handling', () => {
         it('should log and throw if repository fails', async () => {
             const spyLogger = jest.spyOn(service['logger'], 'error');
@@ -155,17 +129,14 @@ describe('ImcService', () => {
                     provide: 'IImcRepository',
                     useValue: mockImcRepository,
                 },
+                {
+                    provide: getRepositoryToken(User),
+                    useValue: mockUserRepository,
+                },
             ],
         }).compile();
 
         service = module.get<ImcService>(ImcService);
-
-        mockImcRepository.createAndSave.mockImplementation((data) =>
-            Promise.resolve({
-                id: 1,
-                ...data,
-            }),
-        );
     });
 
     it('should be defined', () => {
