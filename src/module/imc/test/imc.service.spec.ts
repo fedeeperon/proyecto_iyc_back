@@ -317,6 +317,60 @@ describe('ImcService', () => {
     expect(obeso[0].categoria).toBe('Obeso');
   });
 
+  // PU-22 Asociar cálculo de IMC a usuario autenticado
+  it('debería calcular y guardar el IMC asociado al usuario autenticado', async () => {
+    const mockUser: User = {
+      id: 1,
+      email: 'pu22@example.com',
+      password: 'hashed',
+      imc: [],
+    };
+
+    const dto = { peso: 70, altura: 1.75 };
+    const expectedImc = 22.86;
+    const expectedCategoria = 'Normal';
+
+    const usuarioEntity = { ...mockUser }; // simula el usuario encontrado en la base
+    const imcEntity = {
+      id: 1,
+      peso: dto.peso,
+      altura: dto.altura,
+      imc: expectedImc,
+      categoria: expectedCategoria,
+      fecha: new Date(),
+      user: usuarioEntity,
+    };
+
+    jest.spyOn(mockUserRepository, 'findOne').mockResolvedValue(usuarioEntity);
+    jest.spyOn(mockImcRepository, 'createAndSave').mockResolvedValue(imcEntity);
+
+    const result = await service.calcularImc(dto, mockUser);
+
+    expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: mockUser.id } });
+    expect(mockImcRepository.createAndSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        peso: dto.peso,
+        altura: dto.altura,
+        imc: expectedImc,
+        categoria: expectedCategoria,
+        user: usuarioEntity,
+      })
+    );
+    const plainResult = JSON.parse(JSON.stringify(result));
+
+
+    expect(plainResult).toEqual(
+      expect.objectContaining({
+        peso: dto.peso,
+        altura: dto.altura,
+        imc: expectedImc,
+        categoria: expectedCategoria,
+        fecha: expect.any(String),
+      })
+    );
+    
+  });
+
   // Tests adicionales para mejorar coverage
 
   //PU-26 - Test para usuario no encontrado
