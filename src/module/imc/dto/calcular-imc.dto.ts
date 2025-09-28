@@ -12,7 +12,7 @@ export class CalcularImcDto {
     @Type(() => Number)
     @IsNumber({}, { message: 'La altura debe ser un número' })
     @IsNotEmpty({ message: 'La altura no puede estar vacía' })
-    @Min(0.1, { message: 'La altura mínima es 0.1 metros' })
+    @Min(0.1, { message: 'La altura debe ser mayor a 0' })
     @Max(2.99, { message: 'La altura debe ser menor a 3 metros' })
     altura: number;
 }
