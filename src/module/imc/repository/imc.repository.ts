@@ -4,7 +4,7 @@ import { ImcEntity } from '../entities/imc.entity';
 import { CreateImcDto } from '../dto/create-imc.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
+import { ObjectId } from 'mongodb';
 
 @Injectable()
 export class ImcRepository implements IImcRepository {
@@ -16,7 +16,6 @@ export class ImcRepository implements IImcRepository {
   ) {}
 
   async createAndSave(data: CreateImcDto | ImcEntity): Promise<ImcEntity> {
-    
     this.logger.debug(`Creando registro IMC: ${JSON.stringify(data)}`);
     try {
       const imc = this.repository.create(data);
@@ -27,6 +26,7 @@ export class ImcRepository implements IImcRepository {
     }
   }
 
+  // ------------------- Historial general (opcional) -------------------
   async find(esDescendente: boolean, skip: number, take?: number): Promise<ImcEntity[]> {
     try {
       return this.repository.find({
@@ -40,16 +40,25 @@ export class ImcRepository implements IImcRepository {
     }
   }
 
-  async findByUser(user: User, esDescendente: boolean, skip: number, take?: number): Promise<ImcEntity[]> {
+  // ------------------- Historial por usuario -------------------
+  async findByUser(
+    userId: ObjectId,
+    esDescendente: boolean,
+    skip: number,
+    take?: number,
+  ): Promise<ImcEntity[]> {
     try {
       return this.repository.find({
-        where: { user: { id: user.id } },
+        where: { userId }, // 🔹 ahora usamos directamente ObjectId
         order: { fecha: esDescendente ? 'DESC' : 'ASC' },
         skip,
         take,
       });
     } catch (error) {
-      this.logger.error(`Error al obtener historial de IMC para usuario ${user.email}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error al obtener historial de IMC para usuario ${userId.toHexString()}: ${error.message}`,
+        error.stack,
+      );
       throw new InternalServerErrorException('No se pudo obtener el historial de IMC del usuario');
     }
   }

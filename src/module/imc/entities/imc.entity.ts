@@ -1,29 +1,27 @@
-import { User } from '../../user/entities/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, BeforeInsert, ManyToOne, JoinColumn } from 'typeorm';
+import { ObjectId } from 'mongodb';
+import { Entity, Column, ObjectIdColumn } from 'typeorm';
 
 @Entity('imc')
 export class ImcEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @ObjectIdColumn()
+  id: ObjectId;
 
-  @Column('float')
+  @Column()
   peso: number;
 
-  @Column('float')
+  @Column()
   altura: number;
 
-  @Column('float')
+  @Column()
   imc: number;
 
   @Column()
   categoria: string;
 
-  @Column({ type: 'timestamp' })
+  @Column()
   fecha: Date;
 
-  @ManyToOne(() => User, (user) => user.imc, { eager: true })
-  @JoinColumn({ name: 'user_id' }) // 🔹 asegura la FK correcta
-  user: User;
-  
+  @Column()
+  userId: ObjectId; 
 }
 

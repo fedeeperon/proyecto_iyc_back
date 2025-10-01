@@ -8,11 +8,13 @@ dotenv.config();
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  url: process.env.MONGO_URI,
+  // Alternativamente:
+  // host: process.env.DB_HOST || 'localhost',
+  // port: parseInt(process.env.DB_PORT || '27017'),
+  // database: process.env.DB_NAME || 'calculadora-imc',
+  // username: process.env.DB_USER, // opcional
+  // password: process.env.DB_PASSWORD, // opcional
   entities: [User, ImcEntity],
   migrations: ['./src/migrations/*.ts'], // ubicación de tus migraciones
   synchronize: false,

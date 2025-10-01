@@ -2,6 +2,8 @@ import { Injectable, Inject } from '@nestjs/common';
 import { IUserRepository } from './repository/user-repository.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ObjectId } from 'mongodb';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -14,8 +16,10 @@ export class UserService {
     return this.userRepository.findByEmail(email);
   }
 
-  async findById(id: number) {
-    return this.userRepository.findById(id);
+  // Cambiar de `number` a `string | ObjectId`
+  async findById(id: string | ObjectId) {
+    const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+    return this.userRepository.findById(objectId);
   }
 
   async findAll() {
@@ -26,7 +30,15 @@ export class UserService {
     return this.userRepository.createUser(dto);
   }
 
-  async update(id: number, dto: UpdateUserDto) {
-    return this.userRepository.updateUser(id, dto);
+  // Cambiar de `number` a `string | ObjectId`
+  async update(id: ObjectId, dto: UpdateUserDto) {
+    const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+  
+    const updateData = { ...dto };
+  
+    console.log('ID recibido en updateUser:', id);
+
+    return this.userRepository.updateUser(objectId, updateData);
   }
+  
 }

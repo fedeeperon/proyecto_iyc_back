@@ -1,9 +1,15 @@
-import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { LoginUserDto } from '../user/dto/login-user.dto';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -12,18 +18,23 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  private generateToken(user: { id: number; email: string }) {
+  private generateToken(user: { id: string; email: string }) {
     const payload = { email: user.email, sub: user.id };
-    return { access_token: this.jwtService.sign(payload) };
+    return { 
+      access_token: this.jwtService.sign(payload) // Usa la configuración del módulo (1h)
+    };
   }
 
   async register(createUserDto: CreateUserDto) {
     try {
-      const newUser = await this.usersService.create(createUserDto);
-      return this.generateToken(newUser);
+      const newUser: User = await this.usersService.create(createUserDto);
+
+      return this.generateToken({
+        id: newUser.id.toString(),
+        email: newUser.email,
+      });
     } catch (error) {
-      // Código de error en Postgres para UNIQUE constraint
-      if (error.code === '23505') {
+      if (error.code === 11000 || error.code === '23505') {
         throw new BadRequestException('Email ya registrado');
       }
       throw new InternalServerErrorException('Error al registrar usuario');
@@ -31,7 +42,7 @@ export class AuthService {
   }
 
   async login(loginUserDto: LoginUserDto) {
-    const user = await this.usersService.findByEmail(loginUserDto.email);
+    const user: User | null = await this.usersService.findByEmail(loginUserDto.email,);
 
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
@@ -46,7 +57,9 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    return this.generateToken(user);
+    return this.generateToken({
+      id: user.id.toString(),
+      email: user.email,
+    });
   }
 }
-

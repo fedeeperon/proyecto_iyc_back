@@ -1,10 +1,10 @@
-import { ImcEntity } from '../../imc/entities/imc.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { ObjectId } from 'mongodb';
+import { Entity, ObjectIdColumn, Column } from 'typeorm';
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @ObjectIdColumn()
+  id: ObjectId;
 
   @Column({ unique: true })
   email: string;
@@ -12,6 +12,4 @@ export class User {
   @Column()
   password: string;
 
-  @OneToMany(() => ImcEntity, (imc) => imc.user)
-  imc: ImcEntity[];
 }

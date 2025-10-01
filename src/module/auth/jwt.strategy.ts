@@ -4,6 +4,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
+import { ObjectId } from 'mongodb';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -18,12 +19,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { email: string; sub: number }): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { id: payload.sub } });
-    if (!user) {
-      throw new UnauthorizedException('Usuario no encontrado');
+  async validate(payload: { sub: string; email: string }) {
+    try {
+      // Verificar que el usuario aún existe en la base de datos
+      const user = await this.userRepository.findOne({
+        where: { _id: new ObjectId(payload.sub) } as any
+      });
+      
+      if (!user) {
+        throw new UnauthorizedException('Usuario no encontrado');
+      }
+      
+      return {
+        id: payload.sub,
+        email: payload.email,
+      };
+    } catch (error) {
+      console.error('Error en validación JWT:', error);
+      throw new UnauthorizedException('Token inválido');
     }
-    return user; 
   }
+  
 }
-
