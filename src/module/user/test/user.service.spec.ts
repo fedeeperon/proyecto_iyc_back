@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
+import { ObjectId } from 'mongodb';
+
 
 describe('UserService', () => {
   let service: UserService;
@@ -58,7 +60,7 @@ describe('UserService', () => {
       };
 
       const expectedUser = {
-        id: 1,
+        id: new ObjectId(),
         email: 'test@example.com',
         password: 'hashedpassword',
       };
@@ -91,7 +93,7 @@ describe('UserService', () => {
     it('should find user by email', async () => {
       const email = 'test@example.com';
       const expectedUser = {
-        id: 1,
+        id: new ObjectId(),
         email: 'test@example.com',
         password: 'hashedpassword',
       };
@@ -117,9 +119,9 @@ describe('UserService', () => {
 
   describe('findById', () => {
     it('should find user by id', async () => {
-      const userId = 1;
+      const userId = new ObjectId();
       const expectedUser = {
-        id: 1,
+        id: userId,
         email: 'test@example.com',
         password: 'hashedpassword',
       };
@@ -151,13 +153,13 @@ describe('UserService', () => {
 
   describe('update', () => {
     it('should update user successfully', async () => {
-      const userId = 1;
+      const userId = new ObjectId();
       const updateUserDto: UpdateUserDto = {
         email: 'updated@example.com',
       };
 
       const expectedUser = {
-        id: 1,
+        id: new ObjectId(),
         email: 'updated@example.com',
         password: 'hashedpassword',
       };

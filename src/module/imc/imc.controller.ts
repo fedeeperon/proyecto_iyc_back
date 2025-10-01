@@ -93,25 +93,26 @@ export class ImcController {
   @Get('estadisticas')
   async getEstadisticas(@Req() req: AuthRequest) {
     console.log('=== INICIO OBTENER ESTADÍSTICAS ===');
-    console.log('Obteniendo estadísticas para usuario:', req.user.id);
-    console.log('Datos del usuario completos:', req.user);
-    
+
     try {
       if (!req.user || !req.user.id) {
         console.error('Usuario no encontrado en request');
         throw new BadRequestException('Usuario no autenticado correctamente');
       }
 
+      console.log('Obteniendo estadísticas para usuario:', req.user.id);
+      console.log('Datos del usuario completos:', req.user);
+
       if (!ObjectId.isValid(req.user.id)) {
         console.error('ID de usuario inválido:', req.user.id);
         throw new BadRequestException('ID de usuario inválido');
       }
-      
+
       const userId = new ObjectId(req.user.id);
       console.log('ObjectId creado correctamente:', userId.toHexString());
-      
+
       const result = await this.imcService.getEstadisticas(userId);
-      
+
       console.log('Estadísticas obtenidas exitosamente');
       console.log('=== FIN OBTENER ESTADÍSTICAS ===');
       return result;
@@ -121,7 +122,7 @@ export class ImcController {
       console.error('Mensaje:', error.message);
       console.error('Stack:', error.stack);
       console.error('=== FIN ERROR ===');
-      
+
       if (error instanceof BadRequestException) {
         throw error;
       }

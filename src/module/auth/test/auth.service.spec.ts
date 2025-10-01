@@ -19,7 +19,7 @@ describe('AuthService', () => {
   };
 
   const mockUser = {
-    id: 1,
+    id: '1',
     email: 'usuario@test.com',
     password: '$2b$10$hashedpassword', // Hash simulado
   };
@@ -150,7 +150,7 @@ describe('AuthService', () => {
       };
 
       const mockFoundUser = {
-        id: 2,
+        id: '2',
         email: 'lauri@gmail.com',
         password: '$2b$10$hashedpassword123456',
       };
@@ -211,9 +211,9 @@ describe('AuthService', () => {
 
   describe('generateToken', () => {
     it('should generate JWT token with correct payload', () => {
-      const user = { id: 1, email: 'test@example.com' };
+      const user = { id: '1', email: 'test@example.com' };
       
-      const result = service['generateToken'](user);
+      const result = service['generateToken']({ id: user.id.toString(), email: user.email });
 
       expect(mockJwtService.sign).toHaveBeenCalledWith({
         email: user.email,

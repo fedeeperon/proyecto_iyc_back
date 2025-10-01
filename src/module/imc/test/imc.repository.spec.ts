@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ImcEntity } from '../entities/imc.entity';
 import { User } from '../../user/entities/user.entity';
+import { ObjectId } from 'mongodb';
+
 
 const mockRepository = () => ({
   create: jest.fn(),
@@ -18,10 +20,9 @@ describe('ImcRepository', () => {
   let module: TestingModule;
 
   const mockUser: User = {
-    id: 1,
+    id: new ObjectId(),
     email: 'test@example.com',
     password: 'hashedpassword',
-    imc: [],
   };
 
   beforeEach(async () => {
@@ -60,13 +61,13 @@ describe('ImcRepository', () => {
     it('should create and save an ImcEntity', async () => {
       const fecha = new Date();
       const entity = new ImcEntity();
-      entity.id = 1;
+      entity.id = new ObjectId();
       entity.peso = 70;
       entity.altura = 1.75;
       entity.imc = 22.86;
       entity.categoria = 'Normal';
       entity.fecha = fecha;
-      entity.user = mockUser;
+      entity.userId = mockUser.id;
 
       repo.create.mockReturnValue(entity);
       repo.save.mockResolvedValue(entity);
@@ -94,7 +95,7 @@ describe('ImcRepository', () => {
   describe('find', () => {
     it('should return entities in DESC order', async () => {
       const entity = new ImcEntity();
-      entity.id = 1;
+      entity.id = new ObjectId();;
       entity.peso = 70;
       entity.altura = 1.75;
       entity.imc = 22.86;
@@ -108,7 +109,7 @@ describe('ImcRepository', () => {
         });
         it('should return entities in ASC order', async () => {
       const entity = new ImcEntity();
-      entity.id = 1;
+      entity.id = new ObjectId();;
       entity.peso = 70;
       entity.altura = 1.75;
       entity.imc = 22.86;
@@ -131,49 +132,51 @@ describe('ImcRepository', () => {
   describe('findByUser', () => {
     it('should return entities for specific user in DESC order', async () => {
       const entity = new ImcEntity();
-      entity.id = 1;
+      entity.id = new ObjectId();;
       entity.peso = 70;
       entity.altura = 1.75;
       entity.imc = 22.86;
       entity.categoria = 'Normal';
       entity.fecha = new Date();
-      entity.user = mockUser;
+      entity.userId = mockUser.id;
       
       const entities: ImcEntity[] = [entity];
       repo.find.mockResolvedValue(entities);
       
-      const result = await repository.findByUser(mockUser, true, 0, 10);
+      const result = await repository.findByUser(mockUser.id, true, 0, 10);
       
       expect(repo.find).toHaveBeenCalledWith({
-        where: { user: { id: mockUser.id } },
-        order: { fecha: 'DESC' },
-        skip: 0,
-        take: 10
-      });
+      where: { userId: mockUser.id },
+      order: { fecha: 'DESC' },
+      skip: 0,
+      take: 10
+    });
+
       expect(result).toEqual(entities);
     });
 
     it('should return entities for specific user in ASC order', async () => {
       const entity = new ImcEntity();
-      entity.id = 1;
+      entity.id = new ObjectId();;
       entity.peso = 70;
       entity.altura = 1.75;
       entity.imc = 22.86;
       entity.categoria = 'Normal';
       entity.fecha = new Date();
-      entity.user = mockUser;
+      entity.userId = mockUser.id;
       
       const entities: ImcEntity[] = [entity];
       repo.find.mockResolvedValue(entities);
       
-      const result = await repository.findByUser(mockUser, false, 0, 10);
+      const result = await repository.findByUser(mockUser.id, false, 0, 10);
       
       expect(repo.find).toHaveBeenCalledWith({
-        where: { user: { id: mockUser.id } },
-        order: { fecha: 'ASC' },
-        skip: 0,
-        take: 10
-      });
+      where: { userId: mockUser.id },
+      order: { fecha: 'ASC' },
+      skip: 0,
+      take: 10
+    });
+
       expect(result).toEqual(entities);
     });
 
@@ -181,7 +184,7 @@ describe('ImcRepository', () => {
       repo.find.mockImplementation(() => {
         throw new Error('fail');
       });
-      await expect(repository.findByUser(mockUser, true, 0, 10)).rejects.toThrow('No se pudo obtener el historial de IMC del usuario');
+      await expect(repository.findByUser(mockUser.id, true, 0, 10)).rejects.toThrow('No se pudo obtener el historial de IMC del usuario');
     });
   });
 });

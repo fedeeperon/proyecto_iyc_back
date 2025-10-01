@@ -4,7 +4,7 @@ import { UserService } from '../user.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { ExecutionContext } from '@nestjs/common';
 import { UpdateUserDto } from '../dto/update-user.dto';
-
+import { ObjectId } from 'mongodb';
 // Mock del guard para permitir el acceso sin validar token
 class MockAuthGuard {
   canActivate(context: ExecutionContext) {
@@ -53,8 +53,21 @@ describe('UserController', () => {
 
   it('debería actualizar un usuario por ID', async () => {
     const dto: UpdateUserDto = { password: 'nuevaClave123' };
-    const result = await controller.updateUser('1', dto);
-    expect(result).toEqual({ id: 1, email: 'updated@example.com' });
-    expect(mockUserService.update).toHaveBeenCalledWith(1, dto);
+    const objectId = new ObjectId(); // ✅ mismo valor que en el controlador
+
+    jest.spyOn(mockUserService, 'update').mockResolvedValue({
+      id: objectId,
+      email: 'updated@example.com',
+    });
+
+    const result = await controller.updateUser(objectId.toHexString(), dto);
+
+    expect(result).toEqual({
+      id: objectId,
+      email: 'updated@example.com',
+    });
+
+    expect(mockUserService.update).toHaveBeenCalledWith(objectId, dto); 
   });
+
 });

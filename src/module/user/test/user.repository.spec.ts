@@ -7,6 +7,7 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { ObjectId } from 'mongodb';
 
 const mockRepository = () => ({
   findOne: jest.fn(),
@@ -55,7 +56,7 @@ describe('UserRepository', () => {
 
   describe('findByEmail', () => {
     it('should return user by email', async () => {
-      const user = { id: 1, email: 'hebe@example.com', password: 'hashed' };
+      const user = { id: new ObjectId(), email: 'hebe@example.com', password: 'hashed' };
       repo.findOne.mockResolvedValue(user);
 
       const result = await repository.findByEmail('hebe@example.com');
@@ -66,11 +67,11 @@ describe('UserRepository', () => {
 
   describe('findById', () => {
     it('should return user by ID', async () => {
-      const user = { id: 1, email: 'hebe@example.com', password: 'hashed' };
+      const user = { id: new ObjectId(), email: 'hebe@example.com', password: 'hashed' };
       repo.findOne.mockResolvedValue(user);
 
-      const result = await repository.findById(1);
-      expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      const result = await repository.findById(user.id);
+      expect(repo.findOne).toHaveBeenCalledWith({ where: { id: user.id } });
       expect(result).toEqual(user);
     });
   });
@@ -78,8 +79,8 @@ describe('UserRepository', () => {
   describe('findAll', () => {
     it('should return all users', async () => {
       const users = [
-        { id: 1, email: 'a@example.com', password: 'hashed' },
-        { id: 2, email: 'b@example.com', password: 'hashed' },
+        { id: new ObjectId(), email: 'a@example.com', password: 'hashed' },
+        { id: new ObjectId(), email: 'b@example.com', password: 'hashed' },
       ];
       repo.find.mockResolvedValue(users);
 
@@ -93,7 +94,7 @@ describe('UserRepository', () => {
     it('should create and save user with hashed password', async () => {
       const dto: CreateUserDto = { email: 'nuevo@example.com', password: 'clave123' };
       const hashed = await bcrypt.hash(dto.password, 10);
-      const entity = { id: 1, email: dto.email, password: hashed };
+      const entity = { id: new ObjectId(), email: dto.email, password: hashed };
 
       repo.create.mockReturnValue(entity);
       repo.save.mockResolvedValue(entity);
@@ -127,7 +128,7 @@ describe('UserRepository', () => {
 
   describe('updateUser', () => {
     it('should update user with new email and hashed password', async () => {
-      const existing = { id: 1, email: 'old@example.com', password: 'hashed' };
+      const existing = { id: new ObjectId(), email: 'old@example.com', password: 'hashed' };
       repo.findOne.mockResolvedValue(existing);
 
       const dto: UpdateUserDto = { email: 'new@example.com', password: 'nuevaClave456' };
@@ -136,9 +137,9 @@ describe('UserRepository', () => {
 
       repo.save.mockResolvedValue(updated);
 
-      const result = await repository.updateUser(1, dto);
+      const result = await repository.updateUser(existing.id, dto);
 
-      expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repo.findOne).toHaveBeenCalledWith({ where: { _id: existing.id } });
       expect(repo.save).toHaveBeenCalledWith(
         expect.objectContaining({
           email: dto.email,
@@ -151,7 +152,7 @@ describe('UserRepository', () => {
     });
 
     it('should update user with only email if password is missing', async () => {
-      const existing = { id: 1, email: 'old@example.com', password: 'hashed' };
+      const existing = { id: new ObjectId(), email: 'old@example.com', password: 'hashed' };
       repo.findOne.mockResolvedValue(existing);
 
       const dto: UpdateUserDto = { email: 'soloemail@example.com' };
@@ -159,9 +160,9 @@ describe('UserRepository', () => {
 
       repo.save.mockResolvedValue(updated);
 
-      const result = await repository.updateUser(1, dto);
+      const result = await repository.updateUser(existing.id, dto);
 
-      expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(repo.findOne).toHaveBeenCalledWith({ where: { _id: existing.id } });
       expect(repo.save).toHaveBeenCalledWith(updated);
       expect(result).toEqual(updated);
     });
@@ -170,7 +171,7 @@ describe('UserRepository', () => {
       repo.findOne.mockResolvedValue(null);
       const dto: UpdateUserDto = { email: 'no@example.com' };
 
-      await expect(repository.updateUser(999, dto)).rejects.toThrow(NotFoundException);
+      await expect(repository.updateUser(new ObjectId(), dto)).rejects.toThrow(NotFoundException);
     });
   });
 });

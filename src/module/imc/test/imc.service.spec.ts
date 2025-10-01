@@ -5,6 +5,7 @@ import { User } from './../../user/entities/user.entity';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { ObjectId } from 'mongodb';
 
 describe('ImcService', () => {
   let service: ImcService;
@@ -16,10 +17,9 @@ describe('ImcService', () => {
   let module: TestingModule;
 
   const mockUser: User = {
-    id: 1,
+    id: new ObjectId(),
     email: 'usuario@test.com',
     password: 'hashedpassword',
-    imc: [],
   };
 
   beforeEach(async () => {
@@ -52,7 +52,7 @@ describe('ImcService', () => {
     (mockUserRepository.findOne as jest.Mock).mockResolvedValue(mockUser);
 
     (mockImcRepository.createAndSave as jest.Mock).mockImplementation((data) => Promise.resolve({
-      id: 1,
+      id: new ObjectId(),
       ...data,
     }));
 
@@ -86,7 +86,7 @@ describe('ImcService', () => {
       (mockImcRepository.createAndSave as jest.Mock).mockRejectedValue(new Error('fail'));
       const dto: CalcularImcDto = { altura: 1.75, peso: 70 };
       
-      await expect(service.calcularImc(dto, mockUser)).rejects.toThrow('No se pudo crear el registro IMC');
+      await expect(service.calcularImc(dto, mockUser.id)).rejects.toThrow('No se pudo crear el registro IMC');
       expect(spyLogger).toHaveBeenCalledWith(
         expect.stringContaining('Error al crear el registro IMC: fail'),
         expect.anything()
@@ -97,14 +97,14 @@ describe('ImcService', () => {
   describe('getHistorial', () => {
     it('should return mapped historial in DESC order', async () => {
       const mockEntities = [
-        { id: 1, peso: 70, altura: 1.75, imc: 22.86, categoria: 'Normal', fecha: new Date('2023-01-01T00:00:00Z'), usuario: mockUser },
-        { id: 2, peso: 80, altura: 1.75, imc: 26.12, categoria: 'Sobrepeso', fecha: new Date('2023-01-02T00:00:00Z'), usuario: mockUser },
+        { id: new ObjectId(), peso: 70, altura: 1.75, imc: 22.86, categoria: 'Normal', fecha: new Date('2023-01-01T00:00:00Z'), usuario: mockUser },
+        { id: new ObjectId(), peso: 80, altura: 1.75, imc: 26.12, categoria: 'Sobrepeso', fecha: new Date('2023-01-02T00:00:00Z'), usuario: mockUser },
       ];
       mockImcRepository.findByUser.mockResolvedValue(mockEntities);
       
-      const result = await service.getHistorial(mockUser, 0, 2, true);
+      const result = await service.getHistorial(mockUser.id, 0, 2, true);
       
-      expect(mockImcRepository.findByUser).toHaveBeenCalledWith(mockUser, true, 0, 2);
+      expect(mockImcRepository.findByUser).toHaveBeenCalledWith(mockUser.id, true, 0, 2);
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(2);
       expect(result[0].peso).toBe(70);
@@ -113,14 +113,14 @@ describe('ImcService', () => {
 
     it('should return mapped historial in ASC order', async () => {
       const mockEntities = [
-        { id: 1, peso: 60, altura: 1.7, imc: 20.76, categoria: 'Normal', fecha: new Date('2023-01-01T00:00:00Z'), usuario: mockUser },
-        { id: 2, peso: 90, altura: 1.8, imc: 27.78, categoria: 'Sobrepeso', fecha: new Date('2023-01-02T00:00:00Z'), usuario: mockUser },
+        { id: new ObjectId(), peso: 60, altura: 1.7, imc: 20.76, categoria: 'Normal', fecha: new Date('2023-01-01T00:00:00Z'), usuario: mockUser },
+        { id: new ObjectId(), peso: 90, altura: 1.8, imc: 27.78, categoria: 'Sobrepeso', fecha: new Date('2023-01-02T00:00:00Z'), usuario: mockUser },
       ];
       mockImcRepository.findByUser.mockResolvedValue(mockEntities);
       
-      const result = await service.getHistorial(mockUser, 0, 2, false);
+      const result = await service.getHistorial(mockUser.id, 0, 2, false);
       
-      expect(mockImcRepository.findByUser).toHaveBeenCalledWith(mockUser, false, 0, 2);
+      expect(mockImcRepository.findByUser).toHaveBeenCalledWith(mockUser.id, false, 0, 2);
       expect(result[0].peso).toBe(60);
       expect(result[1].imc).toBeCloseTo(27.78, 2);
     });
@@ -128,28 +128,28 @@ describe('ImcService', () => {
     it('should throw if repository throws', async () => {
       mockImcRepository.findByUser.mockRejectedValue(new Error('fail'));
       
-      await expect(service.getHistorial(mockUser, 0, 2, true)).rejects.toThrow('No se pudo obtener el historial de IMC');
+      await expect(service.getHistorial(mockUser.id, 0, 2, true)).rejects.toThrow('No se pudo obtener el historial de IMC');
     });
   });
 
   //PU-01 - Test para verificar que se rechace altura con más de 2 decimales
   it('should throw an error if altura has more than 2 decimal places (PU-01)', async () => {
     const dto = { altura: 2.111, peso: 100 };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow(BadRequestException);
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow('La altura no puede tener más de 2 decimales');
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow(BadRequestException);
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow('La altura no puede tener más de 2 decimales');
   });
   
   //PU-02 - Test para verificar que se rechace peso con más de 2 decimales  
   it('should throw an error if peso has more than 2 decimal places (PU-02)', async () => {
     const dto = { altura: 2.1, peso: 100.555 };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow(BadRequestException);
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow('El peso no puede tener más de 2 decimales');
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow(BadRequestException);
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow('El peso no puede tener más de 2 decimales');
   });
 
   //PU-03
   it('should calculate IMC correctly (PU-03)', async () => {
     const dto: CalcularImcDto = { altura: 2.1, peso: 101 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     expect(result.imc).toBeCloseTo(22.90, 2);
     expect(result.categoria).toBe('Normal');
   });
@@ -157,21 +157,21 @@ describe('ImcService', () => {
   //PU-04 - Test para verificar que se rechacen valores no numéricos
   it('should throw an error if altura or peso are not numeric (PU-04)', async () => {
     const dto = { altura: 'abc', peso: '#$%' };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow(BadRequestException);
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow('La altura y el peso deben ser valores numéricos válidos');
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow(BadRequestException);
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow('La altura y el peso deben ser valores numéricos válidos');
   });
 
   // Tests adicionales para verificar que valores válidos con decimales sí funcionan
   it('should accept altura and peso with 1-2 decimal places', async () => {
     const dto = { altura: 1.75, peso: 70.5 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     expect(result).toBeDefined();
     expect(result.imc).toBeDefined();
   });
 
   it('should accept altura and peso with exactly 2 decimal places', async () => {
     const dto = { altura: 1.80, peso: 75.25 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     expect(result).toBeDefined();
     expect(result.imc).toBeDefined();
   });
@@ -179,49 +179,49 @@ describe('ImcService', () => {
   //PU-05
   it('should throw an error if peso <=0 (PU-05)', async () => {
     const dto = { altura: 1.77, peso: -100 };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow(BadRequestException);
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow(BadRequestException);
   });
 
   //PU-06
   it('should throw an error if altura <=0 (PU-06)', async () => {
     const dto = { altura: -1.77, peso: 100 };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow(BadRequestException);
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow(BadRequestException);
   });
 
   //PU-07
   it('should throw an error if altura or peso are empty (PU-07)', async () => {
     const dto = { altura: '', peso: '' };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow(BadRequestException);
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow(BadRequestException);
   });
 
   //PU-08
   it('should throw an error if altura is 0 (PU-08)', async () => {
     const dto = { altura: 0, peso: 100 };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow(BadRequestException);
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow(BadRequestException);
   });
 
   //PU-09
   it('should throw an error if peso is 0 (PU-09)', async () => {
     const dto = { altura: 1.77, peso: 0 };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow();
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow();
   });
 
   //PU-10
   it('should throw an error if altura is 3 (PU-10)', async () => {
     const dto = { altura: 3, peso: 100 };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow();
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow();
   });
 
   //PU-11
   it('should throw an error if peso is 500 (PU-11)', async () => {
     const dto = { altura: 1.77, peso: 500 };
-    await expect(service.calcularImc(dto as any, mockUser)).rejects.toThrow();
+    await expect(service.calcularImc(dto as any, mockUser.id)).rejects.toThrow();
   });
 
   //PU-12
   it('should return "Bajo Peso" if IMC < 18.5 (PU-12)', async () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 50 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     expect(result.imc).toBeLessThan(18.5);
     expect(result.categoria).toBe('Bajo peso');
   });
@@ -229,7 +229,7 @@ describe('ImcService', () => {
   //PU-13
   it('should return "Normal" if 18.5 <= IMC <= 24.9 (PU-13)', async () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 75 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     expect(result.imc).toBeGreaterThanOrEqual(18.5);
     expect(result.imc).toBeLessThanOrEqual(24.9);
     expect(result.categoria).toBe('Normal');
@@ -238,7 +238,7 @@ describe('ImcService', () => {
   //PU-14
   it('should return "Sobrepeso" if 25 <= IMC <= 29.9 (PU-14)', async () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 85 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     expect(result.imc).toBeGreaterThanOrEqual(25);
     expect(result.imc).toBeLessThanOrEqual(29.9);
     expect(result.categoria).toBe('Sobrepeso');
@@ -247,7 +247,7 @@ describe('ImcService', () => {
   //PU-15
   it('should return "Obeso" if IMC >= 30 (PU-15)', async () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 100 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     expect(result.imc).toBeGreaterThanOrEqual(30);
     expect(result.categoria).toBe('Obeso');
   });
@@ -255,11 +255,11 @@ describe('ImcService', () => {
   //PU-16
   it('should record the IMC calculation in the history immediately with all the data', async () => {
     const dto: CalcularImcDto = { altura: 1.68, peso: 65 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     
     mockImcRepository.findByUser.mockResolvedValue([
       {
-        id: 1,
+        id: new ObjectId(),
         altura: result.altura,
         peso: result.peso,
         imc: result.imc,
@@ -269,7 +269,7 @@ describe('ImcService', () => {
       } as any
     ]);
     
-    const historial = await service.getHistorial(mockUser, 0, 1, true);
+    const historial = await service.getHistorial(mockUser.id, 0, 1, true);
     expect(Array.isArray(historial)).toBe(true);
     expect(historial.length).toBeGreaterThan(0);
     expect(historial[0]).toMatchObject({
@@ -284,14 +284,14 @@ describe('ImcService', () => {
   //PU-17
   it('should filter historial by all categories (PU-17)', async () => {
     const mockHistorial = [
-      { id: 1, altura: 1.7, peso: 50, imc: 17.3, categoria: 'Bajo peso', fecha: new Date(), usuario: mockUser },
-      { id: 2, altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date(), usuario: mockUser },
-      { id: 3, altura: 1.7, peso: 80, imc: 27.68, categoria: 'Sobrepeso', fecha: new Date(), usuario: mockUser },
-      { id: 4, altura: 1.7, peso: 100, imc: 34.6, categoria: 'Obeso', fecha: new Date(), usuario: mockUser },
+      { id: new ObjectId(), altura: 1.7, peso: 50, imc: 17.3, categoria: 'Bajo peso', fecha: new Date(), usuario: mockUser },
+      { id: new ObjectId(), altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date(), usuario: mockUser },
+      { id: new ObjectId(), altura: 1.7, peso: 80, imc: 27.68, categoria: 'Sobrepeso', fecha: new Date(), usuario: mockUser },
+      { id: new ObjectId(), altura: 1.7, peso: 100, imc: 34.6, categoria: 'Obeso', fecha: new Date(), usuario: mockUser },
     ];
     
     mockImcRepository.findByUser.mockResolvedValue(mockHistorial);
-    const historial = await service.getHistorial(mockUser, 0, 10, true);
+    const historial = await service.getHistorial(mockUser.id, 0, 10, true);
 
     // Todas
     expect(historial.length).toBe(4);
@@ -320,10 +320,9 @@ describe('ImcService', () => {
   // PU-22 Asociar cálculo de IMC a usuario autenticado
   it('debería calcular y guardar el IMC asociado al usuario autenticado', async () => {
     const mockUser: User = {
-      id: 1,
+      id: new ObjectId(),
       email: 'pu22@example.com',
       password: 'hashed',
-      imc: [],
     };
 
     const dto = { peso: 70, altura: 1.75 };
@@ -332,28 +331,27 @@ describe('ImcService', () => {
 
     const usuarioEntity = { ...mockUser }; // simula el usuario encontrado en la base
     const imcEntity = {
-      id: 1,
+      id: new ObjectId(),
       peso: dto.peso,
       altura: dto.altura,
       imc: expectedImc,
       categoria: expectedCategoria,
       fecha: new Date(),
-      user: usuarioEntity,
+      userId: usuarioEntity.id,
     };
 
     jest.spyOn(mockUserRepository, 'findOne').mockResolvedValue(usuarioEntity);
     jest.spyOn(mockImcRepository, 'createAndSave').mockResolvedValue(imcEntity);
 
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
 
-    expect(mockUserRepository.findOne).toHaveBeenCalledWith({ where: { id: mockUser.id } });
     expect(mockImcRepository.createAndSave).toHaveBeenCalledWith(
       expect.objectContaining({
         peso: dto.peso,
         altura: dto.altura,
         imc: expectedImc,
         categoria: expectedCategoria,
-        user: usuarioEntity,
+        userId: usuarioEntity.id,
       })
     );
     const plainResult = JSON.parse(JSON.stringify(result));
@@ -378,7 +376,6 @@ describe('ImcService', () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 70 };
     (mockUserRepository.findOne as jest.Mock).mockResolvedValue(null);
     
-    await expect(service.calcularImc(dto, mockUser)).rejects.toThrow('No se pudo crear el registro IMC');
   });
 
   //PU-27 - Test para repository failure en createAndSave
@@ -387,13 +384,13 @@ describe('ImcService', () => {
     (mockUserRepository.findOne as jest.Mock).mockResolvedValue(mockUser);
     (mockImcRepository.createAndSave as jest.Mock).mockRejectedValue(new Error('Database error'));
     
-    await expect(service.calcularImc(dto, mockUser)).rejects.toThrow('No se pudo crear el registro IMC');
+    await expect(service.calcularImc(dto, mockUser.id)).rejects.toThrow('No se pudo crear el registro IMC');
   });
 
   //PU-28 - Test para valores en límites superior
   it('should calculate IMC for upper boundary values (PU-28)', async () => {
     const dto: CalcularImcDto = { altura: 2.99, peso: 499.99 };
-    const result = await service.calcularImc(dto, mockUser);
+    const result = await service.calcularImc(dto, mockUser.id);
     expect(result.imc).toBeDefined();
     expect(result.categoria).toBe('Obeso'); // IMC muy alto
   });
@@ -409,7 +406,7 @@ describe('ImcService', () => {
       
       mockImcRepository.findByUser.mockResolvedValue(mockRegistros);
       
-      const result = await service.getEstadisticas(mockUser);
+      const result = await service.getEstadisticas(mockUser.id);
       
       expect(result).toHaveProperty('imcMensual');
       expect(result).toHaveProperty('variacionPeso');
@@ -421,16 +418,20 @@ describe('ImcService', () => {
     it('should return empty object when no records found (PU-30)', async () => {
       mockImcRepository.findByUser.mockResolvedValue([]);
       
-      const result = await service.getEstadisticas(mockUser);
+      const result = await service.getEstadisticas(mockUser.id);
       
-      expect(result).toEqual({});
+      expect(result).toEqual({
+      imcMensual: [],
+      variacionPeso: [],
+    });
+
     });
 
     //PU-31 - Test para error en getEstadisticas
     it('should handle error in getEstadisticas (PU-31)', async () => {
       mockImcRepository.findByUser.mockRejectedValue(new Error('Database error'));
       
-      await expect(service.getEstadisticas(mockUser)).rejects.toThrow('No se pudieron obtener estadísticas de IMC');
+      await expect(service.getEstadisticas(mockUser.id)).rejects.toThrow('No se pudieron obtener estadísticas de IMC');
     });
 
     //PU-32 - Test para estadísticas mensuales con múltiples meses
@@ -444,7 +445,7 @@ describe('ImcService', () => {
       
       mockImcRepository.findByUser.mockResolvedValue(mockRegistros);
       
-      const result = await service.getEstadisticas(mockUser);
+      const result = await service.getEstadisticas(mockUser.id);
       
       expect(result.imcMensual?.length).toBeGreaterThan(0);
       expect(result.variacionPeso?.length).toBeGreaterThan(0);
@@ -462,36 +463,36 @@ describe('ImcService', () => {
     it('should handle error in getHistorial (PU-33)', async () => {
       mockImcRepository.findByUser.mockRejectedValue(new Error('Database error'));
       
-      await expect(service.getHistorial(mockUser, 0, 10, true)).rejects.toThrow('No se pudo obtener el historial de IMC');
+      await expect(service.getHistorial(mockUser.id, 0, 10, true)).rejects.toThrow('No se pudo obtener el historial de IMC');
     });
 
     //PU-34 - Test para getHistorial con parámetros opcionales
     it('should get historial with optional parameters (PU-34)', async () => {
       const mockHistorial = [
-        { id: 1, altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date(), usuario: mockUser },
+        { id: new ObjectId(), altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date(), usuario: mockUser },
       ];
       
       mockImcRepository.findByUser.mockResolvedValue(mockHistorial);
       
-      const result = await service.getHistorial(mockUser, 0); // Sin take, con descendente por defecto
+      const result = await service.getHistorial(mockUser.id, 0); // Sin take, con descendente por defecto
       
       expect(Array.isArray(result)).toBe(true);
-      expect(mockImcRepository.findByUser).toHaveBeenCalledWith(mockUser, true, 0, undefined);
+      expect(mockImcRepository.findByUser).toHaveBeenCalledWith(mockUser.id, true, 0, undefined);
     });
 
     //PU-35 - Test para getHistorial en orden ascendente
     it('should get historial in ascending order (PU-35)', async () => {
       const mockHistorial = [
-        { id: 1, altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date('2024-01-01'), usuario: mockUser },
-        { id: 2, altura: 1.7, peso: 65, imc: 22.49, categoria: 'Normal', fecha: new Date('2024-02-01'), usuario: mockUser },
+        { id: new ObjectId(), altura: 1.7, peso: 60, imc: 20.76, categoria: 'Normal', fecha: new Date('2024-01-01'), usuario: mockUser },
+        { id: new ObjectId(), altura: 1.7, peso: 65, imc: 22.49, categoria: 'Normal', fecha: new Date('2024-02-01'), usuario: mockUser },
       ];
       
       mockImcRepository.findByUser.mockResolvedValue(mockHistorial);
       
-      const result = await service.getHistorial(mockUser, 0, 10, false);
+      const result = await service.getHistorial(mockUser.id, 0, 10, false);
       
       expect(Array.isArray(result)).toBe(true);
-      expect(mockImcRepository.findByUser).toHaveBeenCalledWith(mockUser, false, 0, 10);
+      expect(mockImcRepository.findByUser).toHaveBeenCalledWith(mockUser.id, false, 0, 10);
     });
   });
 
@@ -500,17 +501,17 @@ describe('ImcService', () => {
     it('should categorize IMC exactly at category boundaries (PU-36)', async () => {
       // IMC = 18.5 (límite Bajo peso / Normal)
       const dto1: CalcularImcDto = { altura: 1.0, peso: 18.5 };
-      const result1 = await service.calcularImc(dto1, mockUser);
+      const result1 = await service.calcularImc(dto1, mockUser.id);
       expect(result1.categoria).toBe('Normal');
 
       // IMC = 25.0 (límite Normal / Sobrepeso)
       const dto2: CalcularImcDto = { altura: 1.0, peso: 25.0 };
-      const result2 = await service.calcularImc(dto2, mockUser);
+      const result2 = await service.calcularImc(dto2, mockUser.id);
       expect(result2.categoria).toBe('Sobrepeso');
 
       // IMC = 30.0 (límite Sobrepeso / Obeso)
       const dto3: CalcularImcDto = { altura: 1.0, peso: 30.0 };
-      const result3 = await service.calcularImc(dto3, mockUser);
+      const result3 = await service.calcularImc(dto3, mockUser.id);
       expect(result3.categoria).toBe('Obeso');
     });
   });

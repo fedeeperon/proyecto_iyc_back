@@ -31,7 +31,7 @@ describe('AuthController', () => {
 
   it('debería registrar un usuario', async () => {
     const dto: CreateUserDto = { email: 'nuevo@example.com', password: 'clave123' };
-    const expected = { id: 1, email: dto.email };
+    const expected = { id: '1', email: dto.email };
 
     mockAuthService.register.mockResolvedValue(expected);
 

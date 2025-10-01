@@ -2,6 +2,7 @@ import { UserMapper } from '../mappers/user.mapper';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../entities/user.entity';
+import { ObjectId } from 'mongodb';
 
 describe('UserMapper', () => {
   describe('fromCreateDto', () => {
@@ -64,19 +65,19 @@ describe('UserMapper', () => {
 
   describe('toResponse', () => {
     it('debería excluir el campo password al mapear un User completo', () => {
+      const id = new ObjectId();
       const user: User = {
-        id: 1,
+        id,
         email: 'hebe@example.com',
         password: 'hashedPassword',
-        imc: [],
+
       };
 
       const result = UserMapper.toResponse(user);
 
       expect(result).toEqual({
-        id: 1,
+        id,
         email: 'hebe@example.com',
-        imc:[],
       });
 
       expect('password' in result).toBe(false);

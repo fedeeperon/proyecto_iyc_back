@@ -2,11 +2,12 @@ import 'reflect-metadata';
 import { ImcMapper } from '../mappers/imc.mapper';
 import { ImcEntity } from '../entities/imc.entity';
 import { CreateImcDto } from '../dto/create-imc.dto';
+import { ObjectId } from 'mongodb';
 
 describe('ImcMapper', () => {
     it('should map ImcEntity to CreateImcDto correctly', () => {
         const entity = new ImcEntity();
-        entity.id = 1;
+        entity.id = new ObjectId();
         entity.peso = 70;
         entity.altura = 1.75;
         entity.imc = 22.86;
@@ -14,17 +15,17 @@ describe('ImcMapper', () => {
         entity.fecha = new Date('2023-01-01T00:00:00Z');
 
         const dto = ImcMapper.toCreateDto(entity);
-        expect(dto).toBeInstanceOf(CreateImcDto);
         expect(dto.peso).toBe(entity.peso);
         expect(dto.altura).toBe(entity.altura);
         expect(dto.imc).toBe(entity.imc);
         expect(dto.categoria).toBe(entity.categoria);
         expect(dto.fecha?.getTime()).toBe(entity.fecha.getTime());
+        expect(dto.id).toBe(entity.id.toHexString());
     });
 
     it('should map a list of ImcEntity to CreateImcDto[]', () => {
         const entity1 = new ImcEntity();
-        entity1.id = 1;
+        entity1.id = new ObjectId();
         entity1.peso = 70;
         entity1.altura = 1.75;
         entity1.imc = 22.86;
@@ -32,7 +33,7 @@ describe('ImcMapper', () => {
         entity1.fecha = new Date('2023-01-01T00:00:00Z');
 
         const entity2 = new ImcEntity();
-        entity2.id = 2;
+        entity2.id = new ObjectId();
         entity2.peso = 80;
         entity2.altura = 1.75;
         entity2.imc = 26.12;

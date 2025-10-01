@@ -28,11 +28,14 @@ export class ImcService {
   ) {}
 
   async calcularImc(data: CalcularImcDto, userId: ObjectId) {
+    
     this.logger.debug(
       `Calculando IMC con datos: ${JSON.stringify(data)} para usuario ${userId.toHexString()}`,
     );
+    
 
     try {
+
       const { peso, altura } = data;
 
       if (peso === undefined || altura === undefined)
